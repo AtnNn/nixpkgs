@@ -7036,7 +7036,9 @@ in
   ### SHELLS
 
   runtimeShell = "${runtimeShellPackage}${runtimeShellPackage.shellPath}";
-  runtimeShellPackage = bash;
+  runtimeShellPackage = if stdenv.hostPlatform.isWindows
+    then busybox-w32
+    else bash;
 
   any-nix-shell = callPackage ../shells/any-nix-shell { };
 
@@ -15086,6 +15088,8 @@ in
 
   busybox = callPackage ../os-specific/linux/busybox { };
   busybox-sandbox-shell = callPackage ../os-specific/linux/busybox/sandbox-shell.nix { };
+
+  busybox-w32 = callPackage ../os-specific/windows/busybox-w32 { };
 
   cachefilesd = callPackage ../os-specific/linux/cachefilesd { };
 

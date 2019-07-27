@@ -1,4 +1,5 @@
 { stdenv, fetchurl
+
 , cxxSupport ? true
 , compat185 ? true
 , dbmSupport ? false
@@ -28,7 +29,8 @@ stdenv.mkDerivation (rec {
       (if compat185 then "--enable-compat185" else "--disable-compat185")
     ]
     ++ stdenv.lib.optional dbmSupport "--enable-dbm"
-    ++ stdenv.lib.optional stdenv.isFreeBSD "--with-pic";
+    ++ stdenv.lib.optional stdenv.isFreeBSD "--with-pic"
+    ++ stdenv.lib.optional stdenv.hostPlatform.isMinGW "--enable-mingw";
 
   preConfigure = ''
     cd build_unix
@@ -51,6 +53,6 @@ stdenv.mkDerivation (rec {
     homepage = http://www.oracle.com/technetwork/database/database-technologies/berkeleydb/index.html;
     description = "Berkeley DB";
     license = license;
-    platforms = platforms.unix;
+    platforms = platforms.unix ++ platforms.windows;
   };
 } // drvArgs)

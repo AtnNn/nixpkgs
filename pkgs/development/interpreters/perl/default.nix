@@ -22,6 +22,8 @@ let
   libcInc = lib.getDev libc;
   libcLib = lib.getLib libc;
   crossCompiling = stdenv.buildPlatform != stdenv.hostPlatform;
+  useCrossPerl = crossCompiling && !stdenv.hostPlatform.isWindows;
+  exeext = if stdenv.hostPlatform.isWindows then ".exe" else "";
 
   common = { perl, buildPerl, version, sha256 }: stdenv.mkDerivation (rec {
     inherit version;
@@ -35,7 +37,7 @@ let
 
     # TODO: Add a "dev" output containing the header files.
     outputs = [ "out" "man" "devdoc" ] ++
-      stdenv.lib.optional crossCompiling "dev";
+      stdenv.lib.optional useCrossPerl "dev";
     setOutputFlags = false;
 
     disallowedReferences = [ stdenv.cc ];
@@ -53,13 +55,13 @@ let
         })
       ++ optional stdenv.isSunOS ./ld-shared.patch
       ++ optionals stdenv.isDarwin [ ./cpp-precomp.patch ./sw_vers.patch ]
-      ++ optional crossCompiling ./MakeMaker-cross.patch;
+      ++ optional useCrossPerl ./MakeMaker-cross.patch;
 
     postPatch = ''
       pwd="$(type -P pwd)"
       substituteInPlace dist/PathTools/Cwd.pm \
         --replace "/bin/pwd" "$pwd"
-    '' + stdenv.lib.optionalString crossCompiling ''
+    '' + stdenv.lib.optionalString useCrossPerl ''
       substituteInPlace cnf/configure_tool.sh --replace "cc -E -P" "cc -E"
     '';
 
@@ -69,7 +71,7 @@ let
     # contains the string "perl", Configure would select $out/lib.
     # Miniperl needs -lm. perl needs -lrt.
     configureFlags =
-      (if crossCompiling
+      (if useCrossPerl
        then [ "-Dlibpth=\"\"" "-Dglibpth=\"\"" ]
        else [ "-de" "-Dcc=cc" ])
       ++ [
@@ -83,16 +85,16 @@ let
       ++ optional stdenv.isSunOS "-Dcc=gcc"
       ++ optional enableThreading "-Dusethreads";
 
-    configureScript = stdenv.lib.optionalString (!crossCompiling) "${stdenv.shell} ./Configure";
+    configureScript = stdenv.lib.optionalString (!useCrossPerl) "${stdenv.shell} ./Configure";
 
-    dontAddPrefix = !crossCompiling;
+    dontAddPrefix = !useCrossPerl;
 
-    enableParallelBuilding = !crossCompiling;
+    enableParallelBuilding = !useCrossPerl;
 
     preConfigure = ''
         substituteInPlace ./Configure --replace '`LC_ALL=C; LANGUAGE=C; export LC_ALL; export LANGUAGE; $date 2>&1`' 'Thu Jan  1 00:00:01 UTC 1970'
         substituteInPlace ./Configure --replace '$uname -a' '$uname --kernel-name --machine --operating-system'
-      '' + optionalString (!crossCompiling) ''
+      '' + optionalString (!useCrossPerl) ''
         configureFlags="$configureFlags -Dprefix=$out -Dman1dir=$out/share/man/man1 -Dman3dir=$out/share/man/man3"
       '' + optionalString (stdenv.isAarch32 || stdenv.isMips) ''
         configureFlagsArray=(-Dldflags="-lm -lrt")
@@ -138,7 +140,7 @@ let
             }" /no-such-path \
           --replace "${stdenv.cc}" /no-such-path \
           --replace "$man" /no-such-path
-      '' + stdenv.lib.optionalString crossCompiling
+      '' + stdenv.lib.optionalString useCrossPerl
       ''
         mkdir -p $dev/lib/perl5/cross_perl/${version}
         for dir in cnf/{stub,cpan}; do
@@ -170,7 +172,12 @@ let
       platforms = platforms.all;
       priority = 6; # in `buildEnv' (including the one inside `perl.withPackages') the library files will have priority over files in `perl`
     };
-  } // stdenv.lib.optionalAttrs (stdenv.buildPlatform != stdenv.hostPlatform) rec {
+  } // stdenv.lib.optionalAttrs (stdenv.buildPlatform != stdenv.hostPlatform)
+    (if stdenv.hostPlatform.isWindows then rec {
+
+    configurePlatforms = [ ];
+
+  } else rec {
     crossVersion = "2152db1ea241f796206ab309036be1a7d127b370"; # May 25, 2019
 
     perl-cross-src = fetchurl {
@@ -185,11 +192,13 @@ let
       cp -R perl-cross-${crossVersion}/* perl-${version}/
     '';
 
+    configureScript = "./configure";
+
     configurePlatforms = [ "build" "host" "target" ];
 
     # TODO merge setup hooks
     setupHook = ./setup-hook-cross.sh;
-  });
+  }));
 in {
   # the latest Maint version
   perl528 = common {

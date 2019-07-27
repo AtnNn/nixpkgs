@@ -1,0 +1,91 @@
+diff --git a/Makefile.custom b/Makefile.custom
+index 6f679c4e1..f95e49de0 100644
+--- a/Makefile.custom
++++ b/Makefile.custom
+@@ -35,7 +35,7 @@ ifeq ($(CONFIG_FEATURE_INDIVIDUAL),y)
+ INSTALL_OPTS:= --binaries
+ LIBBUSYBOX_SONAME:= 0_lib/libbusybox.so.$(BB_VER)
+ endif
+-install: $(srctree)/applets/install.sh busybox busybox.links
++install: $(srctree)/applets/install.sh busybox$(EXEEXT) busybox.links
+ 	$(Q)DO_INSTALL_LIBS="$(strip $(LIBBUSYBOX_SONAME) $(DO_INSTALL_LIBS))" \
+ 		$(SHELL) $< $(CONFIG_PREFIX) $(INSTALL_OPTS)
+ ifeq ($(strip $(CONFIG_FEATURE_SUID)),y)
+diff --git a/applets/install.sh b/applets/install.sh
+index 415896893..f62c783b6 100755
+--- a/applets/install.sh
++++ b/applets/install.sh
+@@ -15,7 +15,8 @@ shift # Keep only remaining options
+ # Source the configuration
+ . ./.config
+ 
+-h=`sort busybox.links | uniq`
++h=`sort busybox.links | uniq | sed 's/$/.exe/'`
++busybox=busybox.exe
+ 
+ sharedlib_dir="0_lib"
+ 
+@@ -60,8 +61,8 @@ if [ -n "$DO_INSTALL_LIBS" ] && [ x"$DO_INSTALL_LIBS" != x"n" ]; then
+ 	done
+ fi
+ 
+-if [ x"$cleanup" = x"1" ] && [ -e "$prefix/bin/busybox" ]; then
+-	inode=`ls -i "$prefix/bin/busybox" | awk '{print $1}'`
++if [ x"$cleanup" = x"1" ] && [ -e "$prefix/bin/$busybox" ]; then
++	inode=`ls -i "$prefix/bin/$busybox" | awk '{print $1}'`
+ 	sub_shell_it=`
+ 		cd "$prefix"
+ 		for d in usr/sbin usr/bin sbin bin; do
+@@ -76,9 +77,9 @@ if [ x"$cleanup" = x"1" ] && [ -e "$prefix/bin/busybox" ]; then
+ 	exit 0
+ fi
+ 
+-rm -f "$prefix/bin/busybox" || exit 1
++rm -f "$prefix/bin/$busybox" || exit 1
+ mkdir -p "$prefix/bin" || exit 1
+-install -m 755 busybox "$prefix/bin/busybox" || exit 1
++install -m 755 $busybox "$prefix/bin/$busybox" || exit 1
+ 
+ for i in $h; do
+ 	appdir=`dirname "$i"`
+@@ -89,11 +90,11 @@ for i in $h; do
+ 	fi
+ 	mkdir -p "$prefix/$appdir" || exit 1
+ 	if [ x"$scriptwrapper" = x"y" ]; then
+-		if [ x"$swrapall" != x"y" ] && [ x"$i" = x"/bin/sh" ]; then
+-			ln $linkopts busybox "$prefix/$i" || exit 1
++		if [ x"$swrapall" != x"y" ] && [ x"$i" = x"/bin/sh.exe" ]; then
++			ln $linkopts $busybox "$prefix/$i" || exit 1
+ 		else
+ 			rm -f "$prefix/$i"
+-			echo "#!/bin/busybox" >"$prefix/$i"
++			echo "#!/bin/$busybox" >"$prefix/$i"
+ 			chmod +x "$prefix/$i"
+ 		fi
+ 		echo "	$prefix/$i"
+@@ -108,20 +109,20 @@ for i in $h; do
+ 		fi
+ 	else
+ 		if [ x"$linkopts" = x"-f" ]; then
+-			bb_path="$prefix/bin/busybox"
++			bb_path="$prefix/bin/$busybox"
+ 		else
+ 			case "$appdir" in
+ 			/)
+-				bb_path="bin/busybox"
++				bb_path="bin/$busybox"
+ 			;;
+ 			/bin)
+-				bb_path="busybox"
++				bb_path="$busybox"
+ 			;;
+ 			/sbin)
+-				bb_path="../bin/busybox"
++				bb_path="../bin/$busybox"
+ 			;;
+ 			/usr/bin | /usr/sbin)
+-				bb_path="../../bin/busybox"
++				bb_path="../../bin/$busybox"
+ 			;;
+ 			*)
+ 				echo "Unknown installation directory: $appdir"

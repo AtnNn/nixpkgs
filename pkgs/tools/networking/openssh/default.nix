@@ -61,7 +61,8 @@ stdenv.mkDerivation rec {
     '';
 
   nativeBuildInputs = [ pkgconfig ];
-  buildInputs = [ zlib openssl libedit pam ]
+  buildInputs = [ zlib openssl pam ]
+    ++ optional (!stdenv.hostPlatform.isWindows) libedit
     ++ optional withKerberos kerberos
     ++ optional hpnSupport autoreconfHook
     ;
@@ -79,10 +80,10 @@ stdenv.mkDerivation rec {
     "--localstatedir=/var"
     "--with-pid-dir=/run"
     "--with-mantype=man"
-    "--with-libedit=yes"
     "--disable-strip"
     (if pam != null then "--with-pam" else "--without-pam")
   ] ++ optional (etcDir != null) "--sysconfdir=${etcDir}"
+    ++ optional (!stdenv.hostPlatform.isWindows) "--with-libedit=yes"
     ++ optional withKerberos (assert kerberos != null; "--with-kerberos5=${kerberos}")
     ++ optional stdenv.isDarwin "--disable-libutil"
     ++ optional (!linkOpenssl) "--without-openssl";

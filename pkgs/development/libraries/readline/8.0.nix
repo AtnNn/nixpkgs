@@ -27,7 +27,7 @@ stdenv.mkDerivation rec {
        import ./readline-8.0-patches.nix patch);
 
   patches =
-    [ ./link-against-ncurses.patch
+    [ # ./link-against-ncurses.patch
       ./no-arch_only-6.3.patch
     ]
     ++ upstreamPatches;
@@ -60,7 +60,7 @@ stdenv.mkDerivation rec {
 
     maintainers = with maintainers; [ vanschelven dtzWill ];
 
-    platforms = platforms.unix;
+    platforms = platforms.unix ++ platforms.windows;
     branch = "8.0";
   };
 }

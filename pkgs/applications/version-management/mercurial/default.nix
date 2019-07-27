@@ -62,6 +62,6 @@ in python2Packages.buildPythonApplication {
     license = stdenv.lib.licenses.gpl2;
     maintainers = [ stdenv.lib.maintainers.eelco ];
     updateWalker = true;
-    platforms = stdenv.lib.platforms.unix;
+    platforms = with stdenv.lib.platforms; unix ++ windows;
   };
 }

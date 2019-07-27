@@ -4,6 +4,7 @@
 , openssh, pcre2
 , asciidoc, texinfo, xmlto, docbook2x, docbook_xsl, docbook_xml_dtd_45
 , libxslt, tcl, tk, makeWrapper, libiconv
+, busybox-w32
 , svnSupport, subversionClient, perlLibs, smtpPerlLibs
 , perlSupport ? true
 , guiSupport
@@ -11,6 +12,7 @@
 , pythonSupport ? true
 , withpcre2 ? true
 , sendEmailSupport
+, cpioSupport ? !stdenv.hostPlatform.isWindows
 , darwin
 , withLibsecret ? false
 , pkgconfig, glib, libsecret
@@ -22,6 +24,7 @@ assert svnSupport -> perlSupport;
 let
   version = "2.22.0";
   svn = subversionClient.override { perlBindings = perlSupport; };
+  awk = if stdenv.hostPlatform.isWindows then busybox-w32 else gawk;
 in
 
 stdenv.mkDerivation {
@@ -62,7 +65,8 @@ stdenv.mkDerivation {
   nativeBuildInputs = [ gettext perlPackages.perl ]
     ++ stdenv.lib.optionals withManual [ asciidoc texinfo xmlto docbook2x
          docbook_xsl docbook_xml_dtd_45 libxslt ];
-  buildInputs = [curl openssl zlib expat cpio makeWrapper libiconv]
+  buildInputs = [curl openssl zlib expat makeWrapper libiconv]
+    ++ stdenv.lib.optionals cpioSupport [ cpio ]
     ++ stdenv.lib.optionals perlSupport [ perlPackages.perl ]
     ++ stdenv.lib.optionals guiSupport [tcl tk]
     ++ stdenv.lib.optionals withpcre2 [ pcre2 ]
@@ -151,7 +155,7 @@ stdenv.mkDerivation {
       SCRIPT="$(cat <<'EOS'
         BEGIN{
           @a=(
-            '${gnugrep}/bin/grep', '${gnused}/bin/sed', '${gawk}/bin/awk',
+            '${gnugrep}/bin/grep', '${gnused}/bin/sed', '${awk}/bin/awk',
             '${coreutils}/bin/cut', '${coreutils}/bin/basename', '${coreutils}/bin/dirname',
             '${coreutils}/bin/wc', '${coreutils}/bin/tr'
             ${stdenv.lib.optionalString perlSupport ", '${perlPackages.perl}/bin/perl'"}

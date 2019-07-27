@@ -35,7 +35,7 @@ in stdenv.mkDerivation {
     homepage = https://www.gnu.org/software/cpio/;
     description = "A program to create or extract from cpio archives";
     license = licenses.gpl3;
-    platforms = platforms.all;
+    platforms = subtractLists platforms.windows platforms.all;
     priority = 6; # resolves collision with gnutar's "libexec/rmt"
   };
 }

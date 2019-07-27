@@ -9,6 +9,10 @@ stdenv.mkDerivation rec {
     sha256 = "1295q0lkkbrlpd5dl5i48bh1rm8mjzh9y795jlvjz3bp4wf7wxbq";
   };
 
+  preBuild = stdenv.lib.optionalString stdenv.hostPlatform.isWindows ''
+    makeFlagsArray+=(LDFLAGS="-no-undefined -lws2_32")
+  '';
+
   meta = {
     description = "A high-performance event loop/event model with lots of features";
     maintainers = [ stdenv.lib.maintainers.raskin ];

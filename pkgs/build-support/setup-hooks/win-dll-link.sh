@@ -18,7 +18,7 @@ _linkDLLs() {
     for outName in $outputs; do
         addToSearchPath DLLPATH "${!outName}/bin"
     done
-    DLLPATH="$DLLPATH:$PATH"
+    DLLPATH="$DLLPATH:$HOST_PATH"
 
     echo DLLPATH="'$DLLPATH'"
 

@@ -27,6 +27,6 @@ stdenv.mkDerivation rec {
     homepage = http://www.thrysoee.dk/editline/;
     description = "A port of the NetBSD Editline library (libedit)";
     license = licenses.bsd3;
-    platforms = platforms.all;
+    platforms = subtractLists platforms.windows platforms.all;
   };
 }

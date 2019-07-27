@@ -1,4 +1,4 @@
-{ stdenv, lib, fetchurl }:
+{ pkgsBuildHost, stdenv, lib, fetchurl }:
 
 stdenv.mkDerivation rec {
   pname = "gdbm";
@@ -13,6 +13,16 @@ stdenv.mkDerivation rec {
   };
 
   doCheck = true; # not cross;
+
+  nativeBuildInputs = stdenv.lib.optional stdenv.hostPlatform.isWindows
+    (with pkgsBuildHost; [ automake115x autoconf ]);
+
+  patches = stdenv.lib.optional stdenv.hostPlatform.isWindows [
+    (fetchurl {
+      url = https://raw.githubusercontent.com/msys2/MINGW-packages/78487a355f2669015de7023b9b29cf814599304c/mingw-w64-gdbm/gdbm-1.15-win32.patch;
+      sha256 = "1l7clsa3j81mggla3lncm896vvllga2swvsvar9yv6w300d8lfgn";
+    })
+  ];
 
   # Linking static stubs on cygwin requires correct ordering.
   # Consider upstreaming this.

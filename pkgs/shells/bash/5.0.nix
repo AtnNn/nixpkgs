@@ -115,7 +115,7 @@ stdenv.mkDerivation rec {
 
     license = licenses.gpl3Plus;
 
-    platforms = platforms.all;
+    platforms = subtractLists platforms.windows platforms.all;
 
     maintainers = with maintainers; [ peti dtzWill ];
   };
